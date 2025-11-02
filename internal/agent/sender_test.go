@@ -48,7 +48,7 @@ func TestUrlRequest(t *testing.T) {
 	for _, tt := range tableTest {
 		t.Run(tt.name, func(t *testing.T) {
 
-			res, _ := UrlRequest(tt.nameMc, tt.valMc)
+			res, _ := URLRequest(tt.nameMc, tt.valMc)
 
 			assert.Equal(t, tt.result, res)
 

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func UrlRequest(nameMc string, valMc interface{}) (string, error) {
+func URLRequest(nameMc string, valMc interface{}) (string, error) {
 
 	switch valMc.(type) {
 	case int64:
@@ -28,7 +28,7 @@ func ClientMetric(timeDelay time.Duration) error {
 
 		gaugeMap := globalMetrics.ToMap()
 		for k, v := range gaugeMap {
-			url, err := UrlRequest(k, v)
+			url, err := URLRequest(k, v)
 
 			if err != nil {
 				continue
@@ -40,14 +40,15 @@ func ClientMetric(timeDelay time.Duration) error {
 				continue
 			}
 
-			_, err = client.Do(req)
+			res, err := client.Do(req)
 
 			if err != nil {
 				continue
 			}
+			res.Body.Close()
 
 		}
-		log.Print("Metrics post", time.Now())
+		log.Print("Metrics post ", time.Now())
 		time.Sleep(timeDelay * time.Second)
 	}
 

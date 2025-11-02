@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	pollInterval   time.Duration = 2
-	reportInterval time.Duration = 10
+	PollInterval   time.Duration = 2
+	ReportInterval time.Duration = 10
 )
 
 func main() {
 	// Канал для синхронизации
 	go func() {
-		agent.CollectMetrics(pollInterval)
+		agent.CollectMetrics(PollInterval)
 
 	}()
-	err := agent.ClientMetric(reportInterval)
+	err := agent.ClientMetric(ReportInterval)
 	if err != nil {
 		log.Fatal(err)
 	}
