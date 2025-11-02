@@ -31,19 +31,19 @@ func ClientMetric(timeDelay time.Duration) error {
 			url, err := UrlRequest(k, v)
 
 			if err != nil {
-				return err
+				continue
 			}
 
 			req, err := http.NewRequest(http.MethodPost, url, nil)
 
 			if err != nil {
-				return err
+				continue
 			}
 
 			_, err = client.Do(req)
 
 			if err != nil {
-				return err
+				continue
 			}
 
 		}
