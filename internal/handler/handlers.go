@@ -57,7 +57,7 @@ func MetricGet(w http.ResponseWriter, r *http.Request) {
 	valueStr := fmt.Sprintf("%v", value)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	log.Print(fmt.Sprintf("methic add successful %s %s %v", typeMc, nameMc, valueStr))
+	log.Print(fmt.Sprintf("methic get successful %s %s %v", typeMc, nameMc, valueStr))
 
 	w.Write([]byte(valueStr))
 }
@@ -65,7 +65,7 @@ func MetricGet(w http.ResponseWriter, r *http.Request) {
 //go:embed templates/*.html
 var templateFS embed.FS
 
-func GetAllMetricsHTML(w http.ResponseWriter, r *http.Request) {
+func GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request) {
 	data := struct {
 		Counters map[string]int64
 		Gauges   map[string]float64
