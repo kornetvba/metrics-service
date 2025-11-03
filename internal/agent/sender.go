@@ -25,7 +25,10 @@ func ClientMetric(timeDelay time.Duration) error {
 	client := http.Client{}
 
 	for {
-
+		if globalMetrics == nil {
+			time.Sleep(2 * time.Second)
+			continue
+		}
 		gaugeMap := globalMetrics.ToMap()
 		for k, v := range gaugeMap {
 			url, err := URLRequest(k, v)
