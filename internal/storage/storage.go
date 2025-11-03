@@ -1,5 +1,9 @@
 package storage
 
+import (
+	"errors"
+)
+
 type MemStorage struct {
 	Counter map[string]int64
 	Gauge   map[string]float64
@@ -26,6 +30,28 @@ func (ms *MemStorage) SetCounter(name string, i int64) {
 func (ms *MemStorage) SetGauge(name string, i float64) {
 	ms.Gauge[name] = i
 
+}
+
+func (ms *MemStorage) GetMetric(typeMc, nameMc string) (interface{}, error) {
+	switch typeMc {
+	case "counter":
+		v, ok := ms.Counter[nameMc]
+		if !ok {
+			return nil, errors.New("metric value is not found")
+		}
+
+		return v, nil
+
+	case "gauge":
+		v, ok := ms.Gauge[nameMc]
+		if !ok {
+			return nil, errors.New("metric value is not found")
+		}
+
+		return v, nil
+
+	}
+	return nil, errors.New("metric type is not found")
 }
 
 var MemStorageGlobal = NewMemStorage()

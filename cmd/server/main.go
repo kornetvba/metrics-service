@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/go-chi/chi/v5"
 	"github.com/kornetvba/metrics-service/internal/agent"
 	handlers "github.com/kornetvba/metrics-service/internal/handler"
 	"log"
@@ -26,15 +27,18 @@ func main() {
 		}
 	}()
 
-	// Главная горутина ждет бесконечно
 	select {}
 }
 
 func run() error {
 	log.Print("serv is running")
-	mx := http.NewServeMux()
-	//mx.HandleFunc("/update/gauge/", handlers.GaugePost)
-	mx.HandleFunc("/update/{type_metric}/{name_metric}/{value_metric}", handlers.MetricPost)
+	r := chi.NewRouter()
+	r.Route("/", func(r chi.Router) {
+		r.Get("/", handlers.GetAllMetricsHTML)
+		r.Get("/value/{type_metric}/{name_metric}", handlers.MetricGet)
 
-	return http.ListenAndServe(":8080", mx)
+		r.Post("/update/{type_metric}/{name_metric}/{value_metric}", handlers.MetricPost)
+	})
+
+	return http.ListenAndServe(":8080", r)
 }
