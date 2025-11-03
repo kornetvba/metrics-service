@@ -51,7 +51,6 @@ func ClientMetric(timeDelay time.Duration) error {
 			res.Body.Close()
 
 		}
-		log.Print("Metrics post ", time.Now())
 		time.Sleep(timeDelay * time.Second)
 	}
 
