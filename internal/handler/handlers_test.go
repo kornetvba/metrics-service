@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -57,7 +58,7 @@ func TestMetricPost(t *testing.T) {
 		},
 	}
 
-	testMx := http.NewServeMux()
+	testMx := chi.NewRouter()
 	testMx.HandleFunc("/update/{type_metric}/{name_metric}/{value_metric}", MetricPost)
 
 	for _, tt := range tableTests {
