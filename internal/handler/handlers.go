@@ -41,7 +41,7 @@ func MetricPost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
+	log.Print(fmt.Sprintf("methic add successful %s %s %v", typeMc, nameMc, valueMc))
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 }
@@ -57,6 +57,7 @@ func MetricGet(w http.ResponseWriter, r *http.Request) {
 	valueStr := fmt.Sprintf("%v", value)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
+	log.Print(fmt.Sprintf("methic add successful %s %s %v", typeMc, nameMc, valueStr))
 
 	w.Write([]byte(valueStr))
 }
