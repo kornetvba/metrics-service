@@ -2,7 +2,9 @@ package agent
 
 import (
 	metrics "github.com/kornetvba/metrics-service/internal/model"
+	"log"
 	"math/rand"
+	"net/http"
 	"runtime"
 	"time"
 )
@@ -40,7 +42,7 @@ func NewMetrics(metrics *metrics.Metrics) {
 	metrics.StackSys = float64(m.StackSys)
 	metrics.Sys = float64(m.Sys)
 	metrics.TotalAlloc = float64(m.TotalAlloc)
-	metrics.PollCount++
+	metrics.PollCount = int64(1)
 	metrics.RandomValue = rand.Float64()
 }
 
@@ -49,6 +51,15 @@ func CollectMetrics(timeDelay time.Duration) {
 		globalMetrics = &metrics.Metrics{}
 	}
 	for {
+		url, err := URLRequest("PollCount", globalMetrics.PollCount)
+		if err != nil {
+			log.Print(err)
+		}
+		_, err = http.Post(url, "text/plain", nil)
+		if err != nil {
+			log.Print(err)
+		}
+
 		NewMetrics(globalMetrics)
 		time.Sleep(timeDelay * time.Second)
 

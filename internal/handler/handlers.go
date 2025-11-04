@@ -24,7 +24,7 @@ func MetricPost(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		models.MemStorageGlobal.SetCounter(nameMc, int64(valInt))
+		models.MemStorageGlobal.UpdateCounter(nameMc, int64(valInt))
 
 	case "gauge":
 		valFloat, err := strconv.ParseFloat(valueMc, 64)

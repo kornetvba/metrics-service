@@ -21,9 +21,12 @@ type AdderMetric interface {
 	SetGauge(string, float64) float64
 }
 
-func (ms *MemStorage) SetCounter(name string, i int64) {
-
-	ms.Counter[name] = i
+func (ms *MemStorage) UpdateCounter(name string, i int64) {
+	if _, ok := ms.Counter[name]; !ok {
+		ms.Counter[name] = i
+		return
+	}
+	ms.Counter[name] += i
 
 }
 
