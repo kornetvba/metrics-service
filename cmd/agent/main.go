@@ -2,22 +2,17 @@ package main
 
 import (
 	"github.com/kornetvba/metrics-service/internal/agent"
+	"github.com/kornetvba/metrics-service/internal/config"
 	"log"
-	"time"
-)
-
-const (
-	PollInterval   time.Duration = 2
-	ReportInterval time.Duration = 10
 )
 
 func main() {
 	// Канал для синхронизации
 	go func() {
-		agent.CollectMetrics(PollInterval)
+		agent.CollectMetrics(config.PollInterval)
 
 	}()
-	err := agent.ClientMetric(ReportInterval)
+	err := agent.ClientMetric(config.ReportInterval)
 	if err != nil {
 		log.Fatal(err)
 	}

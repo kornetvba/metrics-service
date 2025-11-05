@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/kornetvba/metrics-service/internal/agent"
+	"github.com/kornetvba/metrics-service/internal/config"
 	handlers "github.com/kornetvba/metrics-service/internal/handler"
 	"github.com/kornetvba/metrics-service/internal/storage"
 	"log"
@@ -10,6 +12,7 @@ import (
 )
 
 func main() {
+	config.ParseFlag()
 	go func() {
 		err := run() // сервер
 		if err != nil {
@@ -18,11 +21,11 @@ func main() {
 	}()
 
 	go func() {
-		agent.CollectMetrics(2) // сбор метрик
+		agent.CollectMetrics(config.PollInterval) // сбор метрик
 	}()
 
 	go func() {
-		err := agent.ClientMetric(10) // отправка метрик
+		err := agent.ClientMetric(config.ReportInterval) // отправка метрик
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -42,5 +45,5 @@ func run() error {
 		r.Post("/update/{type_metric}/{name_metric}/{value_metric}", handler.MetricPost)
 	})
 
-	return http.ListenAndServe(":8080", r)
+	return http.ListenAndServe(fmt.Sprintf(":%d", config.Addr.Port), r)
 }

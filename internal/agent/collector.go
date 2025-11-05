@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/kornetvba/metrics-service/internal/config"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"log"
 	"math/rand"
@@ -51,7 +52,7 @@ func CollectMetrics(timeDelay time.Duration) {
 		globalMetrics = &metrics.Metrics{}
 	}
 	for {
-		url, err := URLRequest("PollCount", globalMetrics.PollCount)
+		url, err := URLRequest(config.Addr, "PollCount", globalMetrics.PollCount)
 		if err != nil {
 			log.Print(err)
 		}
@@ -61,7 +62,7 @@ func CollectMetrics(timeDelay time.Duration) {
 		}
 
 		NewMetrics(globalMetrics)
-		time.Sleep(timeDelay * time.Second)
+		time.Sleep(timeDelay)
 
 	}
 }

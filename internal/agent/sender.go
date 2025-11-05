@@ -3,18 +3,19 @@ package agent
 import (
 	"errors"
 	"fmt"
+	"github.com/kornetvba/metrics-service/internal/config"
 	"log"
 	"net/http"
 	"time"
 )
 
-func URLRequest(nameMc string, valMc interface{}) (string, error) {
+func URLRequest(addr *config.NetAddr, nameMc string, valMc interface{}) (string, error) {
 
 	switch valMc.(type) {
 	case int64:
-		return fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", "counter", nameMc, valMc), nil
+		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "counter", nameMc, valMc), nil
 	case float64:
-		return fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", "gauge", nameMc, valMc), nil
+		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "gauge", nameMc, valMc), nil
 	}
 	return "", errors.New("type metric is not valid")
 
@@ -22,7 +23,9 @@ func URLRequest(nameMc string, valMc interface{}) (string, error) {
 
 func ClientMetric(timeDelay time.Duration) error {
 	log.Print("agent running!")
-	client := http.Client{}
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
 
 	for {
 		if globalMetrics == nil {
@@ -31,7 +34,7 @@ func ClientMetric(timeDelay time.Duration) error {
 		}
 		gaugeMap := globalMetrics.ToMap()
 		for k, v := range gaugeMap {
-			url, err := URLRequest(k, v)
+			url, err := URLRequest(config.Addr, k, v)
 
 			if err != nil {
 				continue
@@ -51,7 +54,7 @@ func ClientMetric(timeDelay time.Duration) error {
 			res.Body.Close()
 
 		}
-		time.Sleep(timeDelay * time.Second)
+		time.Sleep(timeDelay)
 	}
 
 }
