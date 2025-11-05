@@ -16,9 +16,11 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-type AdderMetric interface {
-	IncrementCounter(string, int64) int64
-	SetGauge(string, float64) float64
+type Storage interface {
+	UpdateCounter(string, int64)
+	SetGauge(string, float64)
+	GetMetric(string, string) (interface{}, error)
+	GetAllMetrics() (map[string]int64, map[string]float64)
 }
 
 func (ms *MemStorage) UpdateCounter(name string, i int64) {
@@ -57,7 +59,9 @@ func (ms *MemStorage) GetMetric(typeMc, nameMc string) (interface{}, error) {
 	return nil, errors.New("metric type is not found")
 }
 
-var MemStorageGlobal = NewMemStorage()
+func (ms *MemStorage) GetAllMetrics() (map[string]int64, map[string]float64) {
+	return ms.Counter, ms.Gauge
+}
 
 // NOTE: Не усложняем пример, вводя иерархическую вложенность структур.
 // Органичиваясь плоской моделью.

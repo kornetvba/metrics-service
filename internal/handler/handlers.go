@@ -11,7 +11,17 @@ import (
 	"strconv"
 )
 
-func MetricPost(w http.ResponseWriter, r *http.Request) {
+type MetricHandler struct {
+	storage models.Storage
+}
+
+func NewMetricHandler(storage models.Storage) *MetricHandler {
+	return &MetricHandler{
+		storage: storage,
+	}
+}
+
+func (mh *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
 	typeMc := chi.URLParam(r, "type_metric")
 	nameMc := chi.URLParam(r, "name_metric")
 	valueMc := chi.URLParam(r, "value_metric")
@@ -24,7 +34,7 @@ func MetricPost(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		models.MemStorageGlobal.UpdateCounter(nameMc, int64(valInt))
+		mh.storage.UpdateCounter(nameMc, int64(valInt))
 
 	case "gauge":
 		valFloat, err := strconv.ParseFloat(valueMc, 64)
@@ -34,7 +44,7 @@ func MetricPost(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-		models.MemStorageGlobal.SetGauge(nameMc, valFloat)
+		mh.storage.SetGauge(nameMc, valFloat)
 
 	default:
 
@@ -46,10 +56,10 @@ func MetricPost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func MetricGet(w http.ResponseWriter, r *http.Request) {
+func (mh *MetricHandler) MetricGet(w http.ResponseWriter, r *http.Request) {
 	typeMc := chi.URLParam(r, "type_metric")
 	nameMc := chi.URLParam(r, "name_metric")
-	value, err := models.MemStorageGlobal.GetMetric(typeMc, nameMc)
+	value, err := mh.storage.GetMetric(typeMc, nameMc)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -65,13 +75,14 @@ func MetricGet(w http.ResponseWriter, r *http.Request) {
 //go:embed templates/*.html
 var templateFS embed.FS
 
-func GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request) {
+func (mh *MetricHandler) GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request) {
+	counter, gauge := mh.storage.GetAllMetrics()
 	data := struct {
 		Counters map[string]int64
 		Gauges   map[string]float64
 	}{
-		Counters: models.MemStorageGlobal.Counter,
-		Gauges:   models.MemStorageGlobal.Gauge,
+		Counters: counter,
+		Gauges:   gauge,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	tmpl := template.Must(template.ParseFS(templateFS, "templates/*.html"))
