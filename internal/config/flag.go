@@ -41,6 +41,7 @@ var ReportInterval = 10 * time.Second
 var PollInterval = 2 * time.Second
 
 func ParseFlagAgent() {
+	flag.Var(Addr, "a", "localhost:8080")
 	flag.DurationVar(&ReportInterval, "r", ReportInterval, "report interval")
 	flag.DurationVar(&PollInterval, "p", PollInterval, "poll interval")
 	flag.Parse()
