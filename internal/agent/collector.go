@@ -51,18 +51,21 @@ func CollectMetrics(timeDelay time.Duration) {
 	if globalMetrics == nil {
 		globalMetrics = &metrics.Metrics{}
 	}
+
 	for {
 		url, err := URLRequest(config.Addr, "PollCount", globalMetrics.PollCount)
 		if err != nil {
 			log.Print(err)
 		}
 		_, err = http.Post(url, "text/plain", nil)
+
 		if err != nil {
 			log.Print(err)
 		}
 
 		NewMetrics(globalMetrics)
-		time.Sleep(timeDelay)
 
+		time.Sleep(timeDelay)
 	}
+
 }
