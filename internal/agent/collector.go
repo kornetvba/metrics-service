@@ -53,7 +53,7 @@ func CollectMetrics(timeDelay time.Duration) {
 	}
 
 	for {
-		url, err := URLRequest(config.Addr, "PollCount", globalMetrics.PollCount)
+		url, err := URLRequest(config.AddrAgent, "PollCount", globalMetrics.PollCount)
 		if err != nil {
 			log.Print(err)
 		}

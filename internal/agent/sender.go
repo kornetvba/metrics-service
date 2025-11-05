@@ -34,7 +34,7 @@ func ClientMetric(timeDelay time.Duration) error {
 		}
 		gaugeMap := globalMetrics.ToMap()
 		for k, v := range gaugeMap {
-			url, err := URLRequest(config.Addr, k, v)
+			url, err := URLRequest(config.AddrAgent, k, v)
 
 			if err != nil {
 				continue

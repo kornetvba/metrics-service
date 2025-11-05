@@ -45,5 +45,5 @@ func run() error {
 		r.Post("/update/{type_metric}/{name_metric}/{value_metric}", handler.MetricPost)
 	})
 
-	return http.ListenAndServe(fmt.Sprintf(":%d", config.Addr.Port), r)
+	return http.ListenAndServe(fmt.Sprintf(":%d", config.AddrServer.Port), r)
 }
