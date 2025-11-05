@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/kornetvba/metrics-service/internal/agent"
 	"github.com/kornetvba/metrics-service/internal/config"
 	handlers "github.com/kornetvba/metrics-service/internal/handler"
 	"github.com/kornetvba/metrics-service/internal/storage"
@@ -19,16 +18,16 @@ func main() {
 		}
 	}()
 
-	go func() {
-		agent.CollectMetrics(config.PollInterval) // сбор метрик
-	}()
-
-	go func() {
-		err := agent.ClientMetric(config.ReportInterval) // отправка метрик
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	//go func() {
+	//	agent.CollectMetrics(config.PollInterval) // сбор метрик
+	//}()
+	//
+	//go func() {
+	//	err := agent.ClientMetric(config.ReportInterval) // отправка метрик
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//}()
 
 	select {}
 }
