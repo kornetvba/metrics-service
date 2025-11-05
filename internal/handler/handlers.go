@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/kornetvba/metrics-service/internal/config"
 	models "github.com/kornetvba/metrics-service/internal/storage"
 	"html/template"
 	"log"
@@ -51,7 +52,7 @@ func (mh *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Printf("methic post successful %s %s %v", typeMc, nameMc, valueMc)
+	log.Printf("methic post successful %s %s %v %v", typeMc, nameMc, valueMc, config.Addr)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 }
@@ -67,7 +68,7 @@ func (mh *MetricHandler) MetricGet(w http.ResponseWriter, r *http.Request) {
 	valueStr := fmt.Sprintf("%v", value)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	log.Printf("methic get successful %s %s %v", typeMc, nameMc, valueStr)
+	log.Printf("methic get successful %s %s %v %v", typeMc, nameMc, valueStr, config.Addr)
 
 	w.Write([]byte(valueStr))
 }
