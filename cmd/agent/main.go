@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	config.ParseFlag()
+	config.ParseFlagAgent()
 	// Канал для синхронизации
 	go func() {
 		agent.CollectMetrics(config.PollInterval)

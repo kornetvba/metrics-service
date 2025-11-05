@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	config.ParseFlag()
+	config.ParseFlagServer()
 	go func() {
 		err := run() // сервер
 		if err != nil {

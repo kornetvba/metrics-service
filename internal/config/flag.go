@@ -40,11 +40,12 @@ var Addr = &NetAddr{
 var ReportInterval = 10 * time.Second
 var PollInterval = 2 * time.Second
 
-func ParseFlag() {
-	flag.Var(Addr, "a", "localhost:8080")
-
+func ParseFlagAgent() {
 	flag.DurationVar(&ReportInterval, "r", ReportInterval, "report interval")
 	flag.DurationVar(&PollInterval, "p", PollInterval, "poll interval")
-
+	flag.Parse()
+}
+func ParseFlagServer() {
+	flag.Var(Addr, "a", "localhost:8080")
 	flag.Parse()
 }
