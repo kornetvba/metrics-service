@@ -11,18 +11,16 @@ import (
 
 func main() {
 	server.ParseFlagServer()
-	go func() {
-		err := run() // сервер
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
 
-	select {}
+	err := run() // сервер
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 func run() error {
-	log.Print("serv is running")
+	log.Printf("serv is running %s", server.AddrServer.String())
 	handler := handlers.NewMetricHandler(storage.NewMemStorage())
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
