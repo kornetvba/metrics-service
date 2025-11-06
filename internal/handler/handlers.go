@@ -21,45 +21,45 @@ func NewMetricHandler(storage models.Storage) *MetricHandler {
 	}
 }
 
-func (mh *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
-	typeMc := chi.URLParam(r, "type_metric")
-	nameMc := chi.URLParam(r, "name_metric")
-	valueMc := chi.URLParam(r, "value_metric")
+func (h *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
+	metricType := chi.URLParam(r, "type_metric")
+	metricName := chi.URLParam(r, "name_metric")
+	metricValue := chi.URLParam(r, "value_metric")
 
-	switch typeMc {
+	switch metricType {
 	case "counter":
-		valInt, err := strconv.Atoi(valueMc)
+		valInt, err := strconv.Atoi(metricValue)
 		if err != nil {
 
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		mh.storage.UpdateCounter(nameMc, int64(valInt))
+		h.storage.UpdateCounter(metricName, int64(valInt))
 
 	case "gauge":
-		valFloat, err := strconv.ParseFloat(valueMc, 64)
+		valFloat, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 
 			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
-		mh.storage.SetGauge(nameMc, valFloat)
+		h.storage.SetGauge(metricName, valFloat)
 
 	default:
 
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Printf("methic post successful %s %s %v", typeMc, nameMc, valueMc)
+	log.Printf("methic post successful %s %s %v", metricType, metricName, metricValue)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 }
 
-func (mh *MetricHandler) MetricGet(w http.ResponseWriter, r *http.Request) {
-	typeMc := chi.URLParam(r, "type_metric")
-	nameMc := chi.URLParam(r, "name_metric")
-	value, err := mh.storage.GetMetric(typeMc, nameMc)
+func (h *MetricHandler) MetricGet(w http.ResponseWriter, r *http.Request) {
+	metricType := chi.URLParam(r, "type_metric")
+	metricValue := chi.URLParam(r, "name_metric")
+	value, err := h.storage.GetMetric(metricType, metricValue)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -67,7 +67,7 @@ func (mh *MetricHandler) MetricGet(w http.ResponseWriter, r *http.Request) {
 	valueStr := fmt.Sprintf("%v", value)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	log.Printf("methic get successful %s %s %v", typeMc, nameMc, valueStr)
+	log.Printf("methic get successful %s %s %v", metricType, metricValue, valueStr)
 
 	w.Write([]byte(valueStr))
 }
@@ -75,8 +75,8 @@ func (mh *MetricHandler) MetricGet(w http.ResponseWriter, r *http.Request) {
 //go:embed templates/*.html
 var templateFS embed.FS
 
-func (mh *MetricHandler) GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request) {
-	counter, gauge := mh.storage.GetAllMetrics()
+func (h *MetricHandler) GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request) {
+	counter, gauge := h.storage.GetAllMetrics()
 	data := struct {
 		Counters map[string]int64
 		Gauges   map[string]float64

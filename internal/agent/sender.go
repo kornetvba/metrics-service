@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-func URLRequest(addr *config.NetAddr, nameMc string, valMc interface{}) (string, error) {
+func URLRequest(addr *config.NetAddr, metricType string, metricValue interface{}) (string, error) {
 
-	switch valMc.(type) {
+	switch metricValue.(type) {
 	case int64:
-		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "counter", nameMc, valMc), nil
+		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "counter", metricType, metricValue), nil
 	case float64:
-		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "gauge", nameMc, valMc), nil
+		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "gauge", metricType, metricValue), nil
 	}
 	return "", errors.New("type metric is not valid")
 

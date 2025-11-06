@@ -12,7 +12,7 @@ import (
 
 var globalMetrics *metrics.Metrics
 
-func NewMetrics(metrics *metrics.Metrics) {
+func UpdateRuntimeMetrics(metrics *metrics.Metrics) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -64,7 +64,7 @@ func CollectMetrics(timeDelay time.Duration) {
 			resp.Body.Close()
 		}
 
-		NewMetrics(globalMetrics)
+		UpdateRuntimeMetrics(globalMetrics)
 
 		time.Sleep(timeDelay)
 	}
