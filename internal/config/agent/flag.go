@@ -3,7 +3,6 @@ package agent
 import (
 	"flag"
 	"github.com/kornetvba/metrics-service/internal/config"
-	"time"
 )
 
 var AddrAgent = &config.NetAddr{
@@ -11,12 +10,12 @@ var AddrAgent = &config.NetAddr{
 	Port: 8080,
 }
 
-var ReportInterval = 10 * time.Second
-var PollInterval = 2 * time.Second
+var ReportInterval = 10
+var PollInterval = 2
 
 func ParseFlagAgent() {
 	flag.Var(AddrAgent, "a", "localhost:8080")
-	flag.DurationVar(&ReportInterval, "r", ReportInterval, "report interval")
-	flag.DurationVar(&PollInterval, "p", PollInterval, "poll interval")
+	flag.IntVar(&ReportInterval, "r", ReportInterval, "report interval")
+	flag.IntVar(&PollInterval, "p", PollInterval, "report interval")
 	flag.Parse()
 }
