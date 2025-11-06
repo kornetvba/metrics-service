@@ -2,18 +2,18 @@ package main
 
 import (
 	"github.com/kornetvba/metrics-service/internal/agent"
-	"github.com/kornetvba/metrics-service/internal/config"
+	flag "github.com/kornetvba/metrics-service/internal/config/agent"
 	"log"
 )
 
 func main() {
-	config.ParseFlagAgent()
+	flag.ParseFlagAgent()
 	// Канал для синхронизации
 	go func() {
-		agent.CollectMetrics(config.PollInterval)
+		agent.CollectMetrics(flag.PollInterval)
 
 	}()
-	err := agent.ClientMetric(config.ReportInterval)
+	err := agent.ClientMetric(flag.ReportInterval)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kornetvba/metrics-service/internal/config"
+	"github.com/kornetvba/metrics-service/internal/config/agent"
 	"log"
 	"net/http"
 	"time"
@@ -34,7 +35,7 @@ func ClientMetric(timeDelay time.Duration) error {
 		}
 		gaugeMap := globalMetrics.ToMap()
 		for k, v := range gaugeMap {
-			url, err := URLRequest(config.AddrAgent, k, v)
+			url, err := URLRequest(agent.AddrAgent, k, v)
 
 			if err != nil {
 				continue

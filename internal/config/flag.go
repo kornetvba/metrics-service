@@ -2,11 +2,9 @@ package config
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type NetAddr struct {
@@ -31,28 +29,4 @@ func (a *NetAddr) Set(addr string) error {
 	a.Host = addrSpl[0]
 	a.Port = port
 	return nil
-}
-
-var AddrServer = &NetAddr{
-	Host: "localhost",
-	Port: 8080,
-}
-
-var AddrAgent = &NetAddr{
-	Host: "localhost",
-	Port: 8080,
-}
-
-var ReportInterval = 10 * time.Second
-var PollInterval = 2 * time.Second
-
-func ParseFlagAgent() {
-	flag.Var(AddrAgent, "a", "localhost:8080")
-	flag.DurationVar(&ReportInterval, "r", ReportInterval, "report interval")
-	flag.DurationVar(&PollInterval, "p", PollInterval, "poll interval")
-	flag.Parse()
-}
-func ParseFlagServer() {
-	flag.Var(AddrServer, "a", "localhost:8080")
-	flag.Parse()
 }
