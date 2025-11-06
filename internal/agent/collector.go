@@ -57,10 +57,11 @@ func CollectMetrics(timeDelay time.Duration) {
 		if err != nil {
 			log.Print(err)
 		}
-		_, err = http.Post(url, "text/plain", nil)
-
+		resp, err := http.Post(url, "text/plain", nil)
 		if err != nil {
 			log.Print(err)
+		} else {
+			resp.Body.Close()
 		}
 
 		NewMetrics(globalMetrics)
