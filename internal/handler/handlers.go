@@ -51,7 +51,7 @@ func (h *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Printf("methic post successful %s %s %v", metricType, metricName, metricValue)
+
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 }
@@ -66,8 +66,6 @@ func (h *MetricHandler) MetricGet(w http.ResponseWriter, r *http.Request) {
 	}
 	valueStr := fmt.Sprintf("%v", value)
 	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	log.Printf("methic get successful %s %s %v", metricType, metricValue, valueStr)
 
 	w.Write([]byte(valueStr))
 }
@@ -92,5 +90,6 @@ func (h *MetricHandler) GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request
 		log.Print(err)
 		return
 	}
+	//w.WriteHeader(http.StatusOK)
 
 }
