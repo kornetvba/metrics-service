@@ -15,21 +15,13 @@ import (
 func DecodeMetricBody(metricName string, metricValue interface{}) ([]byte, error) {
 	metric := metrics.Metric{}
 	metric.ID = metricName
-	switch metricValue.(type) {
+	switch val := metricValue.(type) {
 	case int64:
 		metric.MType = "counter"
-		v, ok := metricValue.(int64)
-		if !ok {
-			return nil, errors.New("type counter access only int64")
-		}
-		metric.Delta = &v
+		metric.Delta = &val
 	case float64:
 		metric.MType = "gauge"
-		v, ok := metricValue.(float64)
-		if !ok {
-			return nil, errors.New("type gauge access only float64")
-		}
-		metric.Value = &v
+		metric.Value = &val
 	default:
 		return nil, errors.New("value is not validate")
 	}
@@ -59,6 +51,7 @@ func ClientMetric(timeDelay time.Duration) error {
 			}
 
 			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
 
 			if err != nil {
 				continue

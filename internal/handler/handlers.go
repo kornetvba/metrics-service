@@ -99,7 +99,7 @@ func (h *MetricHandler) GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request
 func (h *MetricHandler) MetricPostJSON(w http.ResponseWriter, r *http.Request) {
 	metric := metrics.Metric{}
 	if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (h *MetricHandler) MetricPostJSON(w http.ResponseWriter, r *http.Request) {
 		setValue := h.storage.SetGauge(metric.ID, *metric.Value)
 		metric.Value = &setValue
 	} else {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -128,32 +128,21 @@ func (h *MetricHandler) MetricGetJSON(w http.ResponseWriter, r *http.Request) {
 	metric := metrics.Metric{}
 
 	if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	val, err := h.storage.GetMetric(metric.MType, metric.ID)
 	if err != nil {
 
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 	}
 
-	switch val.(type) {
+	switch valueType := val.(type) {
 	case int64:
-		v, ok := val.(int64)
-		if !ok {
-
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		metric.Delta = &v
+		metric.Delta = &valueType
 	case float64:
-		v, ok := val.(float64)
-		if !ok {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		metric.Value = &v
+		metric.Value = &valueType
 	}
 	data, err := json.Marshal(metric)
 	if err != nil {
