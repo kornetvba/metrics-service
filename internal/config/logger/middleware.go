@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-func AsHandlerFunc(fn http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(fn)
-}
-
 func LogMiddlewarePost(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeNow := time.Now()

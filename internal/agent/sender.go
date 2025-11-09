@@ -1,25 +1,43 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kornetvba/metrics-service/internal/config"
 	"github.com/kornetvba/metrics-service/internal/config/agent"
+	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"log"
 	"net/http"
 	"time"
 )
 
-func URLRequest(addr *config.NetAddr, metricType string, metricValue interface{}) (string, error) {
-
+func DecodeMetricBody(metricName string, metricValue interface{}) ([]byte, error) {
+	metric := metrics.Metric{}
+	metric.ID = metricName
 	switch metricValue.(type) {
 	case int64:
-		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "counter", metricType, metricValue), nil
+		metric.MType = "counter"
+		v, ok := metricValue.(int64)
+		if !ok {
+			return nil, errors.New("type counter access only int64")
+		}
+		metric.Delta = &v
 	case float64:
-		return fmt.Sprintf("http://%s/update/%s/%s/%v", addr.String(), "gauge", metricType, metricValue), nil
+		metric.MType = "gauge"
+		v, ok := metricValue.(float64)
+		if !ok {
+			return nil, errors.New("type gauge access only float64")
+		}
+		metric.Value = &v
+	default:
+		return nil, errors.New("value is not validate")
 	}
-	return "", errors.New("type metric is not valid")
-
+	data, err := json.Marshal(metric)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func ClientMetric(timeDelay time.Duration) error {
@@ -35,13 +53,12 @@ func ClientMetric(timeDelay time.Duration) error {
 		}
 		gaugeMap := globalMetrics.ToMap()
 		for k, v := range gaugeMap {
-			url, err := URLRequest(agent.AddrAgent, k, v)
-
+			body, err := DecodeMetricBody(k, v)
 			if err != nil {
 				continue
 			}
 
-			req, err := http.NewRequest(http.MethodPost, url, nil)
+			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(body))
 
 			if err != nil {
 				continue

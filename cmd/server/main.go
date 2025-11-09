@@ -33,11 +33,13 @@ func run() error {
 	r.Route("/", func(r chi.Router) {
 		r.Use(logger.LogMiddlewareGet)
 		r.Get("/", handler.GetAllMetricsHTML)
+		r.Post("/value/", handler.MetricGetJSON)
 		r.Get("/value/{type_metric}/{name_metric}", handler.MetricGet)
 	})
 
 	r.Route("/update", func(r chi.Router) {
 		r.Use(logger.LogMiddlewarePost)
+		r.Post("/", handler.MetricPostJSON)
 		r.Post("/{type_metric}/{name_metric}/{value_metric}", handler.MetricPost)
 
 	})

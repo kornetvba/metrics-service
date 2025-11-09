@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	metrics "github.com/kornetvba/metrics-service/internal/model"
 	models "github.com/kornetvba/metrics-service/internal/storage"
 	"html/template"
 	"log"
@@ -92,4 +94,73 @@ func (h *MetricHandler) GetAllMetricsHTML(w http.ResponseWriter, _ *http.Request
 	}
 	//w.WriteHeader(http.StatusOK)
 
+}
+
+func (h *MetricHandler) MetricPostJSON(w http.ResponseWriter, r *http.Request) {
+	metric := metrics.Metric{}
+	if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if metric.Delta != nil && metric.MType == "counter" {
+		updateDelta := h.storage.UpdateCounter(metric.ID, *metric.Delta)
+		metric.Delta = &updateDelta
+	} else if metric.Value != nil && metric.MType == "gauge" {
+		setValue := h.storage.SetGauge(metric.ID, *metric.Value)
+		metric.Value = &setValue
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	dataResp, err := json.Marshal(metric)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(dataResp)
+}
+
+func (h *MetricHandler) MetricGetJSON(w http.ResponseWriter, r *http.Request) {
+	metric := metrics.Metric{}
+
+	if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	val, err := h.storage.GetMetric(metric.MType, metric.ID)
+	if err != nil {
+
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	switch val.(type) {
+	case int64:
+		v, ok := val.(int64)
+		if !ok {
+
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		metric.Delta = &v
+	case float64:
+		v, ok := val.(float64)
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		metric.Value = &v
+	}
+	data, err := json.Marshal(metric)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }

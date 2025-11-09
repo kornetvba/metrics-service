@@ -1,5 +1,12 @@
 package metrics
 
+type Metric struct {
+	ID    string   `json:"ID"`
+	MType string   `json:"type"`
+	Delta *int64   `json:"delta,omitempty"` //counter
+	Value *float64 `json:"value,omitempty"` //gauge
+}
+
 type Metrics struct {
 	Alloc         float64
 	BuckHashSys   float64

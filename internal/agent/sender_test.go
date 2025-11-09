@@ -1,65 +1,49 @@
 package agent
 
 import (
-	"fmt"
-	"github.com/kornetvba/metrics-service/internal/config"
-	"github.com/kornetvba/metrics-service/internal/config/server"
-	"github.com/stretchr/testify/assert"
+	"encoding/json"
+	metrics "github.com/kornetvba/metrics-service/internal/model"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func TestUrlRequest(t *testing.T) {
-
-	tableTest := []struct {
-		name   string
-		nameMc string
-		valMc  interface{}
-		result string
-		addr   *config.NetAddr
+func TestDecodeMetricBody(t *testing.T) {
+	tableTests := []struct {
+		name        string
+		metricName  string
+		metricValue interface{}
+		data        metrics.Metric
 	}{
 		{
-			name:   "test1",
-			nameMc: "testCounter",
-			valMc:  int64(5),
-			result: fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", "counter", "testCounter", 5),
-			addr:   server.AddrServer,
+			name:        "test1",
+			metricName:  "danil",
+			metricValue: int64(10),
+			data: metrics.Metric{
+				Delta: func() *int64 { v := int64(10); return &v }(),
+				ID:    "danil",
+				MType: "counter",
+			},
 		},
 		{
-			name:   "test2",
-			nameMc: "testGauge",
-			valMc:  float64(5.4),
-			result: fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", "gauge", "testGauge", 5.4),
-			addr:   server.AddrServer,
-		},
-		{
-			name:   "test3",
-			nameMc: "testGauge",
-			valMc:  float64(5.0),
-			result: fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", "gauge", "testGauge", 5.0),
-			addr:   server.AddrServer,
-		},
-		{
-			name:   "test4",
-			nameMc: "testError",
-			valMc:  "5.0",
-			result: "",
-			addr:   server.AddrServer,
-		},
-		{
-			name:   "test4",
-			nameMc: "testflt",
-			valMc:  55.5,
-			result: fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", "gauge", "testflt", 55.5),
-			addr:   server.AddrServer,
+			name:        "test2",
+			metricName:  "nikita",
+			metricValue: float64(54.5),
+			data: metrics.Metric{
+				Value: func() *float64 { v := float64(54.5); return &v }(),
+				ID:    "nikita",
+				MType: "gauge",
+			},
 		},
 	}
-	for _, tt := range tableTest {
+	for _, tt := range tableTests {
 		t.Run(tt.name, func(t *testing.T) {
+			resp, err := DecodeMetricBody(tt.metricName, tt.metricValue)
+			require.NoError(t, err)
+			metric := metrics.Metric{}
+			err = json.Unmarshal(resp, &metric)
+			require.NoError(t, err)
 
-			res, _ := URLRequest(tt.addr, tt.nameMc, tt.valMc)
-
-			assert.Equal(t, tt.result, res)
-
+			require.Equal(t, tt.data, metric)
 		})
 	}
 }

@@ -17,23 +17,25 @@ func NewMemStorage() *MemStorage {
 }
 
 type Storage interface {
-	UpdateCounter(string, int64)
-	SetGauge(string, float64)
+	UpdateCounter(string, int64) int64
+	SetGauge(string, float64) float64
 	GetMetric(string, string) (interface{}, error)
 	GetAllMetrics() (map[string]int64, map[string]float64)
 }
 
-func (ms *MemStorage) UpdateCounter(name string, i int64) {
+func (ms *MemStorage) UpdateCounter(name string, i int64) int64 {
 	if _, ok := ms.Counter[name]; !ok {
 		ms.Counter[name] = i
-		return
+		return i
 	}
 	ms.Counter[name] += i
+	return ms.Counter[name]
 
 }
 
-func (ms *MemStorage) SetGauge(name string, i float64) {
+func (ms *MemStorage) SetGauge(name string, i float64) float64 {
 	ms.Gauge[name] = i
+	return i
 
 }
 

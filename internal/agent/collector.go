@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/kornetvba/metrics-service/internal/config/agent"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"log"
@@ -53,11 +55,11 @@ func CollectMetrics(timeDelay time.Duration) {
 	}
 
 	for {
-		url, err := URLRequest(agent.AddrAgent, "PollCount", globalMetrics.PollCount)
+		body, err := DecodeMetricBody("PollCount", globalMetrics.PollCount)
 		if err != nil {
 			log.Print(err)
 		}
-		resp, err := http.Post(url, "text/plain", nil)
+		resp, err := http.Post(fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), "application/json", bytes.NewBuffer(body))
 		if err != nil {
 			log.Print(err)
 		} else {
