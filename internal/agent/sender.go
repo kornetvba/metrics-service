@@ -61,14 +61,10 @@ func ClientMetric(timeDelay time.Duration) error {
 				continue
 			}
 
-			res, err := client.Do(req)
-
-			if err != nil {
-				continue
-			}
-			res.Body.Close()
+			_, err = client.Do(req)
 
 		}
+		log.Print("Client post metrics ", time.Now())
 		time.Sleep(timeDelay)
 	}
 
