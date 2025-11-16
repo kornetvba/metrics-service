@@ -136,6 +136,7 @@ func (h *MetricHandler) MetricGetJSON(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	switch valueType := val.(type) {

@@ -67,10 +67,19 @@ func CollectMetrics(timeDelay time.Duration) {
 			logger.Logger.Info("compress data agent err: ", zap.Error(err))
 		}
 		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
+		if err != nil {
+			log.Print(err)
+		}
 		req.Header.Set("Content-Encoding", "gzip")
 		req.Header.Set("Content-Type", "application/json")
-		_, err = http.DefaultClient.Do(req)
-
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Print(err)
+		}
+		err = res.Body.Close()
+		if err != nil {
+			log.Print(err)
+		}
 		UpdateRuntimeMetrics(globalMetrics)
 
 		time.Sleep(timeDelay)

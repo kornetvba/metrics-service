@@ -62,7 +62,7 @@ func ClientMetric(timeDelay time.Duration) error {
 			}
 
 			res, err := client.Do(req)
-			fmt.Println(res.StatusCode)
+
 			if err != nil {
 				continue
 			}
