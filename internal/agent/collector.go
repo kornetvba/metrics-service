@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/kornetvba/metrics-service/internal/config/agent"
+	"github.com/kornetvba/metrics-service/internal/config/logger"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
+	"go.uber.org/zap"
 	"log"
 	"math/rand"
 	"net/http"
@@ -59,12 +61,15 @@ func CollectMetrics(timeDelay time.Duration) {
 		if err != nil {
 			log.Print(err)
 		}
-		resp, err := http.Post(fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), "application/json", bytes.NewBuffer(body))
+
+		bodyCompress, err := CompressData(&body)
 		if err != nil {
-			log.Print(err)
-		} else {
-			resp.Body.Close()
+			logger.Logger.Info("compress data agent err: ", zap.Error(err))
 		}
+		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
+		req.Header.Set("Content-Encoding", "gzip")
+		req.Header.Set("Content-Type", "application/json")
+		_, err = http.DefaultClient.Do(req)
 
 		UpdateRuntimeMetrics(globalMetrics)
 

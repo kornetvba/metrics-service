@@ -49,16 +49,20 @@ func ClientMetric(timeDelay time.Duration) error {
 			if err != nil {
 				continue
 			}
-
-			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(body))
+			bodyCompress, err := CompressData(&body)
+			if err != nil {
+				return err
+			}
+			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
 			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Content-Encoding", "gzip")
 
 			if err != nil {
 				continue
 			}
 
 			res, err := client.Do(req)
-
+			fmt.Println(res.StatusCode)
 			if err != nil {
 				continue
 			}
