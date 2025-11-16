@@ -72,14 +72,14 @@ func CollectMetrics(timeDelay time.Duration) {
 		}
 		req.Header.Set("Content-Encoding", "gzip")
 		req.Header.Set("Content-Type", "application/json")
-		res, err := http.DefaultClient.Do(req)
+		_, err = http.DefaultClient.Do(req)
 		if err != nil {
 			log.Print(err)
 		}
-		err = res.Body.Close()
-		if err != nil {
-			log.Print(err)
-		}
+		//err = res.Body.Close()
+		//if err != nil {
+		//	log.Print(err)
+		//}
 		UpdateRuntimeMetrics(globalMetrics)
 
 		time.Sleep(timeDelay)
