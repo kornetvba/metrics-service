@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,43 +33,50 @@ func DecodeMetricBody(metricName string, metricValue interface{}) ([]byte, error
 	return data, nil
 }
 
-func ClientMetric(timeDelay time.Duration) error {
+func ClientMetric(ctx context.Context, timeDelay time.Duration) error {
 	log.Print("agent running!")
 	client := http.Client{
 		Timeout: 10 * time.Second,
 	}
 
+	ticker := time.NewTicker(timeDelay)
+
 	for {
-		if globalMetrics == nil {
-			time.Sleep(2 * time.Second)
-			continue
+		select {
+		case <-ctx.Done():
+			log.Println("Отправка метрик завершилась")
+			return ctx.Err()
+		case <-ticker.C:
+			if globalMetrics == nil {
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			gaugeMap := globalMetrics.ToMap()
+			for k, v := range gaugeMap {
+				body, err := DecodeMetricBody(k, v)
+				if err != nil {
+					continue
+				}
+				bodyCompress, err := CompressData(&body)
+				if err != nil {
+					return err
+				}
+				req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Content-Encoding", "gzip")
+
+				if err != nil {
+					continue
+				}
+
+				_, err = client.Do(req)
+
+				if err != nil {
+					continue
+				}
+
+			}
 		}
-		gaugeMap := globalMetrics.ToMap()
-		for k, v := range gaugeMap {
-			body, err := DecodeMetricBody(k, v)
-			if err != nil {
-				continue
-			}
-			bodyCompress, err := CompressData(&body)
-			if err != nil {
-				return err
-			}
-			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Content-Encoding", "gzip")
-
-			if err != nil {
-				continue
-			}
-
-			_, err = client.Do(req)
-
-			if err != nil {
-				continue
-			}
-
-		}
-		time.Sleep(timeDelay)
 	}
 
 }

@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/kornetvba/metrics-service/internal/config/agent"
 	"github.com/kornetvba/metrics-service/internal/config/logger"
@@ -51,38 +52,43 @@ func UpdateRuntimeMetrics(metrics *metrics.Metrics) {
 	metrics.RandomValue = rand.Float64()
 }
 
-func CollectMetrics(timeDelay time.Duration) {
+func CollectMetrics(ctx context.Context, timeDelay time.Duration) {
 	if globalMetrics == nil {
 		globalMetrics = &metrics.Metrics{}
 	}
 
+	ticker := time.NewTicker(timeDelay)
 	for {
-		body, err := DecodeMetricBody("PollCount", globalMetrics.PollCount)
-		if err != nil {
-			log.Print(err)
-		}
+		select {
+		case <-ctx.Done():
+			fmt.Println("Сбор метрик завершен")
+			return
+		case <-ticker.C:
+			body, err := DecodeMetricBody("PollCount", globalMetrics.PollCount)
+			if err != nil {
+				log.Print(err)
+			}
 
-		bodyCompress, err := CompressData(&body)
-		if err != nil {
-			logger.Logger.Info("compress data agent err: ", zap.Error(err))
+			bodyCompress, err := CompressData(&body)
+			if err != nil {
+				logger.Logger.Info("compress data agent err: ", zap.Error(err))
+			}
+			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
+			if err != nil {
+				log.Print(err)
+			}
+			req.Header.Set("Content-Encoding", "gzip")
+			req.Header.Set("Content-Type", "application/json")
+			_, err = http.DefaultClient.Do(req)
+			if err != nil {
+				log.Print(err)
+			}
+			//err = res.Body.Close()
+			//if err != nil {
+			//	log.Print(err)
+			//}
+			UpdateRuntimeMetrics(globalMetrics)
 		}
-		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
-		if err != nil {
-			log.Print(err)
-		}
-		req.Header.Set("Content-Encoding", "gzip")
-		req.Header.Set("Content-Type", "application/json")
-		_, err = http.DefaultClient.Do(req)
-		if err != nil {
-			log.Print(err)
-		}
-		//err = res.Body.Close()
-		//if err != nil {
-		//	log.Print(err)
-		//}
-		UpdateRuntimeMetrics(globalMetrics)
-
-		time.Sleep(timeDelay)
 	}
 
 }
