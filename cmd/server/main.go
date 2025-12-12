@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	db2 "github.com/kornetvba/metrics-service/internal/config/db"
 	"github.com/kornetvba/metrics-service/internal/config/logger"
 	"github.com/kornetvba/metrics-service/internal/config/server"
 	handlers "github.com/kornetvba/metrics-service/internal/handler"
@@ -22,6 +23,12 @@ import (
 func main() {
 	server.ParseFlagServer()
 	err := logger.Initialization()
+	db := db2.Database{nil}
+	_, err = db.New(server.DatabaseDSN)
+	if err != nil {
+		log.Print(err)
+	}
+
 	if err != nil {
 		log.Print(err)
 	}
@@ -68,6 +75,7 @@ func run() error {
 		r.Use(server.GzipMiddleware)
 		r.Use(logger.LogMiddlewareGet)
 		r.Get("/", handler.GetAllMetricsHTML)
+		r.Get("/ping", handler.PingHandler)
 		r.Post("/value/", handler.MetricGetJSON)
 		r.Get("/value/{type_metric}/{name_metric}", handler.MetricGet)
 	})

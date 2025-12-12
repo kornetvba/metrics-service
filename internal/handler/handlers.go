@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/kornetvba/metrics-service/internal/config/db"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	models "github.com/kornetvba/metrics-service/internal/storage"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type MetricHandler struct {
@@ -153,4 +156,16 @@ func (h *MetricHandler) MetricGetJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+func (h *MetricHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := db.DB.PingContext(ctx); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
 }

@@ -16,12 +16,14 @@ var AddrServer = &config.NetAddr{
 var StorageInterval int
 var FilePathStorage string
 var Restore bool
+var DatabaseDSN string
 
 func ParseFlagServer() {
 	flag.Var(AddrServer, "a", "localhost:8080")
 	flag.StringVar(&FilePathStorage, "f", "/tmp/metrics-db.json", "the file path to save the storage")
 	flag.IntVar(&StorageInterval, "i", 300, "interval save storage to file")
 	flag.BoolVar(&Restore, "r", true, "upload previously saved ones")
+	flag.StringVar(&DatabaseDSN, "d", "host=localhost port=5432 user=postgres password=postgres dbname=metrics sslmode=disable", "database dsn")
 	flag.Parse()
 
 	if addr, ok := os.LookupEnv("ADDRESS"); ok {
@@ -37,6 +39,11 @@ func ParseFlagServer() {
 		}
 		StorageInterval = storeInt
 	}
+
+	if EnvDatabaseDSN, ok := os.LookupEnv("DATABASE_DSN"); ok {
+		DatabaseDSN = EnvDatabaseDSN
+	}
+
 	if filePath, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
 		FilePathStorage = filePath
 	}
