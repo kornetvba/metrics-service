@@ -113,6 +113,7 @@ func run() error {
 		r.Use(server.GzipMiddleware)
 		r.Use(logger.LogMiddlewarePost)
 		r.Use(fileStore.SaveFileSync)
+		r.Post("/{type_metric}/{name_metric}/{value_metric}", handler.MetricPost)
 		r.Post("/", handler.MetricPostJSON)
 
 	})
