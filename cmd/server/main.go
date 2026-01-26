@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
 	"github.com/go-chi/chi/v5"
-	db2 "github.com/kornetvba/metrics-service/internal/config/db"
+	"github.com/kornetvba/metrics-service/internal/backup"
 	"github.com/kornetvba/metrics-service/internal/config/logger"
 	"github.com/kornetvba/metrics-service/internal/config/server"
 	handlers "github.com/kornetvba/metrics-service/internal/handler"
-	"github.com/kornetvba/metrics-service/internal/storage"
+	"github.com/kornetvba/metrics-service/internal/storage/memory"
+	"github.com/kornetvba/metrics-service/internal/storage/psql"
+	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 )
@@ -23,15 +25,10 @@ import (
 func main() {
 	server.ParseFlagServer()
 	err := logger.Initialization()
-	db := db2.Database{nil}
-	_, err = db.New(server.DatabaseDSN)
 	if err != nil {
 		log.Print(err)
 	}
 
-	if err != nil {
-		log.Print(err)
-	}
 	log.Print(server.FilePathStorage)
 	err = run() // сервер
 	if err != nil {
@@ -42,16 +39,45 @@ func main() {
 func run() error {
 	log.Printf("serv is running %s", server.AddrServer.String())
 
-	memStorage := storage.NewMemStorage()
+	var fileStore *backup.BackupManager
+	var handler *handlers.MetricHandler
 
-	fileStore := storage.NewFileStorage(server.FilePathStorage, server.StorageInterval, server.Restore, memStorage)
+	if server.DatabaseDSN != "" {
+		db, err := sql.Open("postgres", server.DatabaseDSN)
+		if err != nil {
+			log.Print(err)
+		}
+		defer db.Close()
+		psql.DB = db
+		dbPSQL := psql.NewDatabasePSQL(db)
+		err = dbPSQL.BootStrap()
+		if err != nil {
+			log.Fatal(err)
 
-	handler := handlers.NewMetricHandler(fileStore)
+		}
+
+		//fileStore := memory.NewFileStorage(server.FilePathStorage, server.StorageInterval, server.Restore, dbPSQL)
+		fileStore = backup.NewBackupManager(dbPSQL, server.Restore, server.StorageInterval, server.FilePathStorage)
+
+		handler = handlers.NewMetricHandler(dbPSQL)
+
+	} else {
+		db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=metrics sslmode=disable")
+		if err != nil {
+			log.Print(err)
+		}
+		defer db.Close()
+		psql.DB = db
+		memoryStorage := memory.NewMemStorage()
+		fileStore = backup.NewBackupManager(memoryStorage, server.Restore, server.StorageInterval, server.FilePathStorage)
+		handler = handlers.NewMetricHandler(memoryStorage)
+	}
 	//upload from a file
-
-	err := fileStore.Load()
-	if err != nil {
-		log.Print(err)
+	if fileStore.Restore {
+		err := fileStore.Load()
+		if err != nil {
+			log.Print(err)
+		}
 	}
 
 	// Канал для graceful shutdown
@@ -59,12 +85,15 @@ func run() error {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	// Запускаем периодическое сохранение в отдельной горутине
-	if fileStore.StorageIntervalSave != 0 {
+	if fileStore.StorageInterval != 0 {
 		go func() {
 			for {
-				time.Sleep(time.Duration(server.StorageInterval) * time.Second)
-				fmt.Println("save kd")
-				fileStore.Save()
+				time.Sleep(time.Duration(fileStore.StorageInterval) * time.Second)
+
+				err := fileStore.Save()
+				if err != nil {
+					log.Print(err)
+				}
 			}
 		}()
 	}
@@ -83,9 +112,9 @@ func run() error {
 	r.Route("/update", func(r chi.Router) {
 		r.Use(server.GzipMiddleware)
 		r.Use(logger.LogMiddlewarePost)
-		r.Use(fileStore.SaveToFile)
+		r.Use(fileStore.SaveFileSync)
 		r.Post("/", handler.MetricPostJSON)
-		r.Post("/{type_metric}/{name_metric}/{value_metric}", handler.MetricPost)
+
 	})
 
 	// Создаем HTTP сервер с таймаутами
@@ -109,7 +138,7 @@ func run() error {
 
 	// Сохраняем данные перед выходом
 	log.Println("Saving data to file...")
-	err = fileStore.Save()
+	err := fileStore.Save()
 	if err != nil {
 		log.Print("Save to file not success")
 	}

@@ -1,4 +1,4 @@
-package storage
+package memory
 
 import (
 	"errors"
@@ -16,26 +16,19 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-type Storage interface {
-	UpdateCounter(string, int64) int64
-	SetGauge(string, float64) float64
-	GetMetric(string, string) (interface{}, error)
-	GetAllMetrics() (map[string]int64, map[string]float64)
-}
-
-func (ms *MemStorage) UpdateCounter(name string, i int64) int64 {
+func (ms *MemStorage) UpdateCounter(name string, i int64) (int64, error) {
 	if _, ok := ms.Counter[name]; !ok {
 		ms.Counter[name] = i
-		return i
+		return ms.Counter[name], nil
 	}
 	ms.Counter[name] += i
-	return ms.Counter[name]
+	return ms.Counter[name], nil
 
 }
 
-func (ms *MemStorage) SetGauge(name string, i float64) float64 {
+func (ms *MemStorage) SetGauge(name string, i float64) (float64, error) {
 	ms.Gauge[name] = i
-	return i
+	return i, nil
 
 }
 
@@ -62,6 +55,7 @@ func (ms *MemStorage) GetMetric(typeMc, nameMc string) (interface{}, error) {
 }
 
 func (ms *MemStorage) GetAllMetrics() (map[string]int64, map[string]float64) {
+
 	return ms.Counter, ms.Gauge
 }
 

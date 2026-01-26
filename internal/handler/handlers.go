@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/kornetvba/metrics-service/internal/config/db"
+	"github.com/kornetvba/metrics-service/internal/storage/psql"
+
 	metrics "github.com/kornetvba/metrics-service/internal/model"
-	models "github.com/kornetvba/metrics-service/internal/storage"
+	"github.com/kornetvba/metrics-service/internal/repository"
+
 	"html/template"
 	"log"
 	"net/http"
@@ -17,10 +19,10 @@ import (
 )
 
 type MetricHandler struct {
-	storage models.Storage
+	storage repository.Storage
 }
 
-func NewMetricHandler(storage models.Storage) *MetricHandler {
+func NewMetricHandler(storage repository.Storage) *MetricHandler {
 	return &MetricHandler{
 		storage: storage,
 	}
@@ -39,7 +41,10 @@ func (h *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		h.storage.UpdateCounter(metricName, int64(valInt))
+		_, err = h.storage.UpdateCounter(metricName, int64(valInt))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 
 	case "gauge":
 		valFloat, err := strconv.ParseFloat(metricValue, 64)
@@ -49,7 +54,10 @@ func (h *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-		h.storage.SetGauge(metricName, valFloat)
+		_, err = h.storage.SetGauge(metricName, valFloat)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 
 	default:
 
@@ -107,10 +115,18 @@ func (h *MetricHandler) MetricPostJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if metric.Delta != nil && metric.MType == "counter" {
-		updateDelta := h.storage.UpdateCounter(metric.ID, *metric.Delta)
+		updateDelta, err := h.storage.UpdateCounter(metric.ID, *metric.Delta)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		metric.Delta = &updateDelta
 	} else if metric.Value != nil && metric.MType == "gauge" {
-		setValue := h.storage.SetGauge(metric.ID, *metric.Value)
+		setValue, err := h.storage.SetGauge(metric.ID, *metric.Value)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		metric.Value = &setValue
 	} else {
 		w.WriteHeader(http.StatusNotFound)
@@ -162,7 +178,7 @@ func (h *MetricHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	if err := db.DB.PingContext(ctx); err != nil {
+	if err := psql.DB.PingContext(ctx); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

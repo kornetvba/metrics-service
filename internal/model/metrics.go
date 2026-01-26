@@ -1,8 +1,8 @@
 package metrics
 
 type Metric struct {
-	ID    string   `json:"ID"`
-	MType string   `json:"type"`
+	ID    string   `json:"ID"`              //name metric
+	MType string   `json:"type"`            //type metric
 	Delta *int64   `json:"delta,omitempty"` //counter
 	Value *float64 `json:"value,omitempty"` //gauge
 }
