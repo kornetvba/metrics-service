@@ -32,6 +32,7 @@ func (bm *BackupManager) Load() error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	buffioReader := bufio.NewScanner(file)
 	var metric metrics.Metric
@@ -55,7 +56,7 @@ func (bm *BackupManager) Load() error {
 
 		}
 	}
-	return nil
+	return buffioReader.Err()
 
 }
 
@@ -68,7 +69,7 @@ func (bm *BackupManager) Save() error {
 		}
 	}
 
-	file, err := os.OpenFile(bm.FilePath, os.O_CREATE|os.O_APPEND|os.O_TRUNC, 0777)
+	file, err := os.OpenFile(bm.FilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0777)
 	if err != nil {
 		return err
 	}
