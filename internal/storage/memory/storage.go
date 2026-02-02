@@ -2,6 +2,7 @@ package memory
 
 import (
 	"errors"
+	metrics "github.com/kornetvba/metrics-service/internal/model"
 )
 
 type MemStorage struct {
@@ -57,6 +58,20 @@ func (ms *MemStorage) GetMetric(typeMc, nameMc string) (interface{}, error) {
 func (ms *MemStorage) GetAllMetrics() (map[string]int64, map[string]float64) {
 
 	return ms.Counter, ms.Gauge
+}
+
+func (ms *MemStorage) AppendMetrics(metrics []metrics.Metric) error {
+	for _, metric := range metrics {
+		switch metric.MType {
+		case "counter":
+			ms.Counter[metric.ID] += *metric.Delta
+		case "gauge":
+			ms.Gauge[metric.ID] = *metric.Value
+		}
+
+	}
+	return nil
+
 }
 
 // NOTE: Не усложняем пример, вводя иерархическую вложенность структур.

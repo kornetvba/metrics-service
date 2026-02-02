@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/kornetvba/metrics-service/internal/storage/psql"
+	"io"
 
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"github.com/kornetvba/metrics-service/internal/repository"
@@ -174,11 +175,39 @@ func (h *MetricHandler) MetricGetJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (h *MetricHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
+func (h *MetricHandler) PingHandler(w http.ResponseWriter, _ *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	if err := psql.DB.PingContext(ctx); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *MetricHandler) MetricsPostJSON(w http.ResponseWriter, r *http.Request) {
+	metrics := make([]metrics.Metric, 0)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = json.Unmarshal(body, &metrics)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(metrics) == 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.storage.AppendMetrics(metrics)
+	if err != nil {
+
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

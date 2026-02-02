@@ -2,19 +2,18 @@ package agent
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kornetvba/metrics-service/internal/config/agent"
+	"github.com/kornetvba/metrics-service/internal/config/server"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"log"
 	"net/http"
 	"time"
 )
 
-func DecodeMetricBody(metricName string, metricValue interface{}) ([]byte, error) {
-	metric := metrics.Metric{}
+func DecodeMetricBody(metricName string, metricValue interface{}) (*metrics.Metric, error) {
+	metric := &metrics.Metric{}
 	metric.ID = metricName
 	switch val := metricValue.(type) {
 	case int64:
@@ -26,57 +25,55 @@ func DecodeMetricBody(metricName string, metricValue interface{}) ([]byte, error
 	default:
 		return nil, errors.New("value is not validate")
 	}
-	data, err := json.Marshal(metric)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+
+	return metric, nil
 }
 
-func ClientMetric(ctx context.Context, timeDelay time.Duration) error {
+func ClientMetric(timeDelay time.Duration) error {
 	log.Print("agent running!")
 	client := http.Client{
 		Timeout: 10 * time.Second,
 	}
 
-	ticker := time.NewTicker(timeDelay)
-
 	for {
-		select {
-		case <-ctx.Done():
-			log.Println("Отправка метрик завершилась")
-			return ctx.Err()
-		case <-ticker.C:
-			if globalMetrics == nil {
+		metrics := []metrics.Metric{}
+		gaugeMap := globalMetrics.ToMap()
+		for k, v := range gaugeMap {
+			body, err := DecodeMetricBody(k, v)
+			if err != nil {
+				log.Print(err)
 				time.Sleep(2 * time.Second)
 				continue
 			}
-			gaugeMap := globalMetrics.ToMap()
-			for k, v := range gaugeMap {
-				body, err := DecodeMetricBody(k, v)
-				if err != nil {
-					continue
-				}
-				bodyCompress, err := CompressData(&body)
-				if err != nil {
-					return err
-				}
-				req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
-				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Content-Encoding", "gzip")
-
-				if err != nil {
-					continue
-				}
-
-				_, err = client.Do(req)
-
-				if err != nil {
-					continue
-				}
-
-			}
+			metrics = append(metrics, *body)
 		}
-	}
+		data, err := json.Marshal(metrics)
+		if err != nil {
+			log.Print(err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		dataCompress, err := CompressData(&data)
+		if err != nil {
+			log.Print(err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
 
+		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/updates/", server.AddrServer.String()), bytes.NewBuffer(dataCompress))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Encoding", "gzip")
+
+		_, err = client.Do(req)
+		if err != nil {
+			log.Print(err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		time.Sleep(timeDelay)
+	}
 }

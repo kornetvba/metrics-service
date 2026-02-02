@@ -2,12 +2,10 @@ package agent
 
 import (
 	"bytes"
-	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/kornetvba/metrics-service/internal/config/agent"
-	"github.com/kornetvba/metrics-service/internal/config/logger"
+	"github.com/kornetvba/metrics-service/internal/config/server"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
-	"go.uber.org/zap"
 	"log"
 	"math/rand"
 	"net/http"
@@ -15,80 +13,78 @@ import (
 	"time"
 )
 
-var globalMetrics *metrics.Metrics
+var globalMetrics = &metrics.Metrics{}
 
-func UpdateRuntimeMetrics(metrics *metrics.Metrics) {
+func UpdateRuntimeMetrics(metricsRM *metrics.Metrics) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	metrics.Alloc = float64(m.Alloc)
-	metrics.BuckHashSys = float64(m.BuckHashSys)
-	metrics.Frees = float64(m.Frees)
-	metrics.GCCPUFraction = m.GCCPUFraction
-	metrics.GCSys = float64(m.GCSys)
-	metrics.HeapAlloc = float64(m.HeapAlloc)
-	metrics.HeapIdle = float64(m.HeapIdle)
-	metrics.HeapInuse = float64(m.HeapInuse)
-	metrics.HeapObjects = float64(m.HeapObjects)
-	metrics.HeapReleased = float64(m.HeapReleased)
-	metrics.HeapSys = float64(m.HeapSys)
-	metrics.LastGC = float64(m.LastGC)
-	metrics.Lookups = float64(m.Lookups)
-	metrics.MCacheInuse = float64(m.MCacheInuse)
-	metrics.MCacheSys = float64(m.MCacheSys)
-	metrics.MSpanInuse = float64(m.MSpanInuse)
-	metrics.MSpanSys = float64(m.MSpanSys)
-	metrics.Mallocs = float64(m.Mallocs)
-	metrics.NextGC = float64(m.NextGC)
-	metrics.NumForcedGC = float64(m.NumForcedGC)
-	metrics.NumGC = float64(m.NumGC)
-	metrics.OtherSys = float64(m.OtherSys)
-	metrics.PauseTotalNs = float64(m.PauseTotalNs)
-	metrics.StackInuse = float64(m.StackInuse)
-	metrics.StackSys = float64(m.StackSys)
-	metrics.Sys = float64(m.Sys)
-	metrics.TotalAlloc = float64(m.TotalAlloc)
-	metrics.PollCount = int64(1)
-	metrics.RandomValue = rand.Float64()
+	metricsRM.Alloc = float64(m.Alloc)
+	metricsRM.BuckHashSys = float64(m.BuckHashSys)
+	metricsRM.Frees = float64(m.Frees)
+	metricsRM.GCCPUFraction = m.GCCPUFraction
+	metricsRM.GCSys = float64(m.GCSys)
+	metricsRM.HeapAlloc = float64(m.HeapAlloc)
+	metricsRM.HeapIdle = float64(m.HeapIdle)
+	metricsRM.HeapInuse = float64(m.HeapInuse)
+	metricsRM.HeapObjects = float64(m.HeapObjects)
+	metricsRM.HeapReleased = float64(m.HeapReleased)
+	metricsRM.HeapSys = float64(m.HeapSys)
+	metricsRM.LastGC = float64(m.LastGC)
+	metricsRM.Lookups = float64(m.Lookups)
+	metricsRM.MCacheInuse = float64(m.MCacheInuse)
+	metricsRM.MCacheSys = float64(m.MCacheSys)
+	metricsRM.MSpanInuse = float64(m.MSpanInuse)
+	metricsRM.MSpanSys = float64(m.MSpanSys)
+	metricsRM.Mallocs = float64(m.Mallocs)
+	metricsRM.NextGC = float64(m.NextGC)
+	metricsRM.NumForcedGC = float64(m.NumForcedGC)
+	metricsRM.NumGC = float64(m.NumGC)
+	metricsRM.OtherSys = float64(m.OtherSys)
+	metricsRM.PauseTotalNs = float64(m.PauseTotalNs)
+	metricsRM.StackInuse = float64(m.StackInuse)
+	metricsRM.StackSys = float64(m.StackSys)
+	metricsRM.Sys = float64(m.Sys)
+	metricsRM.TotalAlloc = float64(m.TotalAlloc)
+
+	metricsRM.RandomValue = rand.Float64()
+
 }
 
-func CollectMetrics(ctx context.Context, timeDelay time.Duration) {
-	if globalMetrics == nil {
-		globalMetrics = &metrics.Metrics{}
-	}
+func CollectMetrics(timeDelay time.Duration) {
 
-	ticker := time.NewTicker(timeDelay)
 	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Сбор метрик завершен")
-			return
-		case <-ticker.C:
-			body, err := DecodeMetricBody("PollCount", globalMetrics.PollCount)
-			if err != nil {
-				log.Print(err)
-			}
-
-			bodyCompress, err := CompressData(&body)
-			if err != nil {
-				logger.Logger.Info("compress data agent err: ", zap.Error(err))
-			}
-			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(bodyCompress))
-			if err != nil {
-				log.Print(err)
-			}
-			req.Header.Set("Content-Encoding", "gzip")
-			req.Header.Set("Content-Type", "application/json")
-			_, err = http.DefaultClient.Do(req)
-			if err != nil {
-				log.Print(err)
-			}
-			//err = res.Body.Close()
-			//if err != nil {
-			//	log.Print(err)
-			//}
-			UpdateRuntimeMetrics(globalMetrics)
+		UpdateRuntimeMetrics(globalMetrics)
+		metric := metrics.Metric{}
+		metric.MType = "counter"
+		delta := int64(1)
+		metric.Delta = &delta
+		metric.ID = "PollCount"
+		data, err := json.Marshal(metric)
+		if err != nil {
+			log.Print(err)
+			continue
 		}
+		dataCompr, err := CompressData(&data)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+
+		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", server.AddrServer.String()), bytes.NewBuffer(dataCompr))
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Encoding", "gzip")
+		_, err = http.DefaultClient.Do(req)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+
+		time.Sleep(timeDelay)
 	}
 
 }

@@ -29,7 +29,6 @@ func main() {
 		log.Print(err)
 	}
 
-	log.Print(server.FilePathStorage)
 	err = run() // сервер
 	if err != nil {
 		log.Fatal(err)
@@ -115,7 +114,13 @@ func run() error {
 		r.Use(fileStore.SaveFileSync)
 		r.Post("/{type_metric}/{name_metric}/{value_metric}", handler.MetricPost)
 		r.Post("/", handler.MetricPostJSON)
+	})
 
+	r.Route("/updates", func(r chi.Router) {
+		r.Use(server.GzipMiddleware)
+		r.Use(logger.LogMiddlewarePost)
+		r.Use(fileStore.SaveFileSync)
+		r.Post("/", handler.MetricsPostJSON)
 	})
 
 	// Создаем HTTP сервер с таймаутами

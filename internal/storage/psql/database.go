@@ -3,6 +3,7 @@ package psql
 import (
 	"database/sql"
 	"fmt"
+	metrics "github.com/kornetvba/metrics-service/internal/model"
 	_ "github.com/lib/pq"
 	"strconv"
 )
@@ -28,7 +29,6 @@ func (db *DatabasePSQL) BootStrap() error {
     	value_metric NUMERIC);
 `)
 	if err != nil {
-
 		return err
 	}
 	return nil
@@ -148,4 +148,60 @@ func (db *DatabasePSQL) GetAllMetrics() (map[string]int64, map[string]float64) {
 	}
 
 	return counterMap, gaugeMap
+}
+
+func (db *DatabasePSQL) AppendMetrics(metrics []metrics.Metric) error {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return err
+	}
+	stmtCounter, err := tx.Prepare(
+		`
+			INSERT INTO metrics (type_metric, name_metric, value_metric)
+			VALUES ($1,$2,$3)
+			ON CONFLICT (name_metric)
+			DO UPDATE
+			   SET value_metric = metrics.value_metric + $3;`,
+	)
+	if err != nil {
+		return err
+	}
+	stmtGauge, err := tx.Prepare(
+		`
+			INSERT INTO metrics (type_metric, name_metric, value_metric) 
+			VALUES ($1,$2,$3)
+			ON CONFLICT (name_metric)
+			DO UPDATE
+			   SET value_metric = $3
+			`,
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, metric := range metrics {
+		if metric.ID == "" || metric.MType == "" {
+			return fmt.Errorf("missing args")
+		}
+		switch metric.MType {
+		case "counter":
+			_, err = stmtCounter.Exec(metric.MType, metric.ID, metric.Delta)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		case "gauge":
+			_, err = stmtGauge.Exec(metric.MType, metric.ID, metric.Value)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
