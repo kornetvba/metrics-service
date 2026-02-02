@@ -60,19 +60,26 @@ func (db *DatabasePSQL) UpdateCounter(name string, value int64) (int64, error) {
 }
 
 func (db *DatabasePSQL) SetGauge(name string, value float64) (float64, error) {
-	_, err := db.conn.Exec(
+	var val []byte
+
+	_ = db.conn.QueryRow(
 		`
 		INSERT INTO metrics (type_metric, name_metric, value_metric)
 		VALUES ($1,$2,$3)
 		ON CONFLICT (name_metric)
 		DO UPDATE
 		   SET value_metric = $3
+		   RETURNING metrics.value_metric
+	
 `, "gauge", name, value,
-	)
+	).Scan(&val)
+
+	valFloat, err := strconv.ParseFloat(string(val), 64)
 	if err != nil {
 		return 0, err
 	}
-	return value, nil
+
+	return valFloat, nil
 }
 
 func (db *DatabasePSQL) GetMetric(typeMetric string, nameMetric string) (interface{}, error) {
@@ -120,6 +127,7 @@ func (db *DatabasePSQL) GetAllMetrics() (map[string]int64, map[string]float64) {
 	if err != nil {
 		return nil, nil
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var metric MetricPSQL
 		var val []byte
@@ -145,6 +153,10 @@ func (db *DatabasePSQL) GetAllMetrics() (map[string]int64, map[string]float64) {
 			gaugeMap[metric.ID] = v
 		}
 
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, nil
 	}
 
 	return counterMap, gaugeMap
@@ -185,13 +197,13 @@ func (db *DatabasePSQL) AppendMetrics(metrics []metrics.Metric) error {
 		}
 		switch metric.MType {
 		case "counter":
-			_, err = stmtCounter.Exec(metric.MType, metric.ID, metric.Delta)
+			_, err = stmtCounter.Exec(metric.MType, metric.ID, *metric.Delta)
 			if err != nil {
 				tx.Rollback()
 				return err
 			}
 		case "gauge":
-			_, err = stmtGauge.Exec(metric.MType, metric.ID, metric.Value)
+			_, err = stmtGauge.Exec(metric.MType, metric.ID, *metric.Value)
 			if err != nil {
 				tx.Rollback()
 				return err
