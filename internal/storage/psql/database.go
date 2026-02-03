@@ -178,6 +178,7 @@ func (db *DatabasePSQL) AppendMetrics(metrics []metrics.Metric) error {
 	if err != nil {
 		return err
 	}
+	defer stmtCounter.Close()
 	stmtGauge, err := tx.Prepare(
 		`
 			INSERT INTO metrics (type_metric, name_metric, value_metric) 
@@ -190,6 +191,7 @@ func (db *DatabasePSQL) AppendMetrics(metrics []metrics.Metric) error {
 	if err != nil {
 		return err
 	}
+	defer stmtGauge.Close()
 
 	for _, metric := range metrics {
 		if metric.ID == "" || metric.MType == "" {
