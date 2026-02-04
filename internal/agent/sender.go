@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kornetvba/metrics-service/internal/config/server"
+	"github.com/kornetvba/metrics-service/internal/config/agent"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"log"
 	"net/http"
@@ -60,7 +60,7 @@ func ClientMetric(timeDelay time.Duration) error {
 			continue
 		}
 
-		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/updates/", server.AddrServer.String()), bytes.NewBuffer(dataCompress))
+		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/updates/", agent.AddrAgent.String()), bytes.NewBuffer(dataCompress))
 		if err != nil {
 			return err
 		}

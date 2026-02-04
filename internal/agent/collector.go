@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kornetvba/metrics-service/internal/config/server"
+	"github.com/kornetvba/metrics-service/internal/config/agent"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"log"
 	"math/rand"
@@ -71,7 +71,7 @@ func CollectMetrics(timeDelay time.Duration) {
 			continue
 		}
 
-		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", server.AddrServer.String()), bytes.NewBuffer(dataCompr))
+		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/update/", agent.AddrAgent.String()), bytes.NewBuffer(dataCompr))
 		if err != nil {
 			log.Print(err)
 			continue
@@ -81,6 +81,7 @@ func CollectMetrics(timeDelay time.Duration) {
 		_, err = http.DefaultClient.Do(req)
 		if err != nil {
 			log.Print(err)
+			time.Sleep(3 * time.Second)
 			continue
 		}
 
