@@ -167,6 +167,7 @@ func (db *DatabasePSQL) AppendMetrics(metrics []metrics.Metric) error {
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 	stmtCounter, err := tx.Prepare(
 		`
 			INSERT INTO metrics (type_metric, name_metric, value_metric)

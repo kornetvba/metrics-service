@@ -63,7 +63,7 @@ func (ms *MemStorage) GetAllMetrics() (map[string]int64, map[string]float64) {
 
 func (ms *MemStorage) AppendMetrics(metrics []metrics.Metric) error {
 	for _, metric := range metrics {
-		if metric.Value == nil || metric.Delta == nil {
+		if metric.Value == nil && metric.Delta == nil {
 			return fmt.Errorf("missing args")
 		}
 		switch metric.MType {
