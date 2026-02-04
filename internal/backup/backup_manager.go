@@ -73,7 +73,7 @@ func (bm *BackupManager) Save() error {
 		}
 	}
 
-	file, err := os.OpenFile(bm.FilePath, os.O_CREATE|os.O_APPEND|os.O_TRUNC, 0777)
+	file, err := os.OpenFile(bm.FilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0777)
 	if err != nil {
 		return err
 	}
@@ -81,11 +81,11 @@ func (bm *BackupManager) Save() error {
 
 	counters, guages := bm.store.GetAllMetrics()
 	var metric metrics.Metric
-
+	encoder := json.NewEncoder(file)
 	for k, v := range counters {
 		metric.MType, metric.ID, metric.Delta = "counter", k, &v
 
-		if err := json.NewEncoder(file).Encode(metric); err != nil {
+		if err := encoder.Encode(metric); err != nil {
 			return err
 		}
 	}
@@ -94,7 +94,7 @@ func (bm *BackupManager) Save() error {
 
 		metric.MType, metric.ID, metric.Value = "gauge", k, &v
 
-		if err := json.NewEncoder(file).Encode(metric); err != nil {
+		if err := encoder.Encode(metric); err != nil {
 			return err
 		}
 	}
