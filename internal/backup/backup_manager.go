@@ -28,6 +28,10 @@ func NewBackupManager(store repository.Storage, restore bool, storageInterval in
 }
 
 func (bm *BackupManager) Load() error {
+	if !bm.Restore {
+		log.Print("file load off")
+		return nil
+	}
 	file, err := os.Open(bm.FilePath)
 	if err != nil {
 		return err

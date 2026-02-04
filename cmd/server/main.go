@@ -90,6 +90,7 @@ func run() error {
 				time.Sleep(time.Duration(fileStore.StorageInterval) * time.Second)
 
 				err := fileStore.Save()
+				log.Print("save...")
 				if err != nil {
 					log.Print(err)
 				}
