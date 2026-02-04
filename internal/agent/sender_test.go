@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"encoding/json"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -39,11 +38,8 @@ func TestDecodeMetricBody(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := DecodeMetricBody(tt.metricName, tt.metricValue)
 			require.NoError(t, err)
-			metric := metrics.Metric{}
-			err = json.Unmarshal(resp, &metric)
-			require.NoError(t, err)
 
-			require.Equal(t, tt.data, metric)
+			require.Equal(t, tt.data, *resp)
 		})
 	}
 }
