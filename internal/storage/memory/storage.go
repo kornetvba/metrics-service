@@ -2,6 +2,7 @@ package memory
 
 import (
 	"errors"
+	"fmt"
 	metrics "github.com/kornetvba/metrics-service/internal/model"
 )
 
@@ -62,6 +63,9 @@ func (ms *MemStorage) GetAllMetrics() (map[string]int64, map[string]float64) {
 
 func (ms *MemStorage) AppendMetrics(metrics []metrics.Metric) error {
 	for _, metric := range metrics {
+		if metric.Value == nil || metric.Delta == nil {
+			return fmt.Errorf("missing args")
+		}
 		switch metric.MType {
 		case "counter":
 			ms.Counter[metric.ID] += *metric.Delta

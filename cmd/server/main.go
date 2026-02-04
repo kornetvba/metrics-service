@@ -147,7 +147,7 @@ func run() error {
 	log.Println("Saving data to file...")
 	err := fileStore.Save()
 	if err != nil {
-		log.Print("Save to file not success")
+		log.Print("save not success: ", err)
 	}
 	log.Println("Data saved successfully")
 

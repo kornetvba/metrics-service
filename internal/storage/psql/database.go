@@ -197,6 +197,10 @@ func (db *DatabasePSQL) AppendMetrics(metrics []metrics.Metric) error {
 		if metric.ID == "" || metric.MType == "" {
 			return fmt.Errorf("missing args")
 		}
+
+		if metric.Value == nil && metric.Delta == nil {
+			return fmt.Errorf("missing args")
+		}
 		switch metric.MType {
 		case "counter":
 			_, err = stmtCounter.Exec(metric.MType, metric.ID, *metric.Delta)
