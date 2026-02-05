@@ -1,8 +1,13 @@
 package logger
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	metrics "github.com/kornetvba/metrics-service/internal/model"
 	"go.uber.org/zap"
+	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -10,13 +15,27 @@ import (
 func LogMiddlewarePost(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeNow := time.Now()
+		metrics := []metrics.Metric{}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Print(err)
+		}
+		err = json.Unmarshal(body, &metrics)
+		if err != nil {
+			log.Print(err)
+		}
+
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		next.ServeHTTP(w, r)
+
 		duration := time.Since(timeNow)
+
 		Logger.Info(
 			"info post",
 			zap.String("url", fmt.Sprintf("%v", r.URL)),
 			zap.String("method", r.Method),
 			zap.Duration("time duration", duration),
+			zap.Any("body", metrics),
 		)
 	})
 

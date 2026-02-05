@@ -161,9 +161,11 @@ func (h *MetricHandler) MetricGetJSON(w http.ResponseWriter, r *http.Request) {
 
 	switch valueType := val.(type) {
 	case int64:
-		metric.Delta = &valueType
+		delta := valueType
+		metric.Delta = &delta
 	case float64:
-		metric.Value = &valueType
+		value := valueType
+		metric.Value = &value
 	}
 	data, err := json.Marshal(metric)
 	if err != nil {
