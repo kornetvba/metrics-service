@@ -51,12 +51,12 @@ func (db *DatabasePSQL) UpdateCounter(name string, value int64) (int64, error) {
 		return 0, err
 	}
 
-	val, err := strconv.Atoi(string(v))
+	val, err := strconv.ParseInt(string(v), 10, 64)
 	if err != nil {
 		return 0, err
 	}
 
-	return int64(val), nil
+	return val, nil
 }
 
 func (db *DatabasePSQL) SetGauge(name string, value float64) (float64, error) {
@@ -99,7 +99,7 @@ func (db *DatabasePSQL) GetMetric(typeMetric string, nameMetric string) (interfa
 
 	switch typeMetric {
 	case "counter":
-		val, err := strconv.Atoi(string(data))
+		val, err := strconv.ParseInt(string(data), 10, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +139,7 @@ func (db *DatabasePSQL) GetAllMetrics() (map[string]int64, map[string]float64) {
 
 		switch metric.MType {
 		case "counter":
-			v, err := strconv.Atoi(string(val))
+			v, err := strconv.ParseInt(string(val), 10, 64)
 			if err != nil {
 				return nil, nil
 			}

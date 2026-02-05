@@ -36,7 +36,7 @@ func (h *MetricHandler) MetricPost(w http.ResponseWriter, r *http.Request) {
 
 	switch metricType {
 	case "counter":
-		valInt, err := strconv.Atoi(metricValue)
+		valInt, err := strconv.ParseInt(string(metricValue), 10, 64)
 		if err != nil {
 
 			w.WriteHeader(http.StatusBadRequest)
