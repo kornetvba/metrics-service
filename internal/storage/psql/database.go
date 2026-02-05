@@ -129,7 +129,7 @@ func (db *DatabasePSQL) GetAllMetrics() (map[string]int64, map[string]float64) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var metric MetricPSQL
+		metric := MetricPSQL{}
 		var val []byte
 
 		err = rows.Scan(&metric.MType, &metric.ID, &val)
@@ -206,13 +206,11 @@ func (db *DatabasePSQL) AppendMetrics(metrics []metrics.Metric) error {
 		case "counter":
 			_, err = stmtCounter.Exec(metric.MType, metric.ID, *metric.Delta)
 			if err != nil {
-				tx.Rollback()
 				return err
 			}
 		case "gauge":
 			_, err = stmtGauge.Exec(metric.MType, metric.ID, *metric.Value)
 			if err != nil {
-				tx.Rollback()
 				return err
 			}
 		}

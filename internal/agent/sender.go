@@ -67,12 +67,13 @@ func ClientMetric(timeDelay time.Duration) error {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Content-Encoding", "gzip")
 
-		_, err = client.Do(req)
+		resp, err := client.Do(req)
 		if err != nil {
 			log.Print(err)
 			time.Sleep(2 * time.Second)
 			continue
 		}
+		resp.Body.Close()
 
 		time.Sleep(timeDelay)
 	}
